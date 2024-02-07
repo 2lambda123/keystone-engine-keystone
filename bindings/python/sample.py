@@ -8,6 +8,21 @@ from keystone import *
 
 
 def test_ks(arch, mode, code, syntax=0):
+    """"Compiles assembly code into machine code using the provided architecture and mode. Optional syntax parameter can be used to specify the syntax of the assembly code. Returns the encoded machine code and the number of instructions. Prints the encoded machine code in hexadecimal format."
+    Parameters:
+        - arch (str): The architecture to use for compiling the assembly code.
+        - mode (str): The mode to use for compiling the assembly code.
+        - code (str): The assembly code to be compiled.
+        - syntax (int, optional): The syntax of the assembly code. Defaults to 0.
+    Returns:
+        - encoding (list): The encoded machine code.
+        - count (int): The number of instructions in the encoded machine code.
+    Processing Logic:
+        - Creates a Ks object using the provided architecture and mode.
+        - If the syntax parameter is provided, sets the syntax of the Ks object.
+        - Uses the Ks object to assemble the provided assembly code.
+        - Prints the encoded machine code in hexadecimal format."""
+    
     ks = Ks(arch, mode)
     if syntax != 0:
         ks.syntax = syntax
@@ -22,6 +37,22 @@ def test_ks(arch, mode, code, syntax=0):
 
 # test symbol resolver
 def test_sym_resolver():
+    """Tests the symbol resolver function.
+        Parameters:
+            - None
+        Returns:
+            - None
+        Processing Logic:
+            - Defines a symbol resolver function that checks if a given symbol is "_l1" and returns 0x1005 if it is.
+            - If the symbol is not "_l1", the function returns None.
+            - Creates a Ks object with architecture and mode specified.
+            - Sets the sym_resolver attribute of the Ks object to the defined symbol resolver function.
+            - Defines a code to be assembled and calls the asm method of the Ks object.
+            - Prints the assembled code in hexadecimal format.
+        Example:
+            test_sym_resolver()
+            # Output: b'jmp _l1; nop' = [ e9 05 10 00 00 90 ]"""
+    
     def sym_resolver(symbol):
         # is this the missing symbol we want to handle?
         if symbol == "_l1":

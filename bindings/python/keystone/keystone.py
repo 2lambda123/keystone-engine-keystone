@@ -77,6 +77,20 @@ __version__ = "%u.%u.%u" %(KS_VERSION_MAJOR, KS_VERSION_MINOR, KS_VERSION_EXTRA)
 
 # setup all the function prototype
 def _setup_prototype(lib, fname, restype, *argtypes):
+    """"Sets up the prototype for a given function in a library."
+    Parameters:
+        - lib (Library): The library where the function is located.
+        - fname (str): The name of the function.
+        - restype (type): The return type of the function.
+        - *argtypes (types): The argument types of the function, if applicable.
+    Returns:
+        - None: This function does not return anything.
+    Processing Logic:
+        - Sets the restype and argtypes for the given function in the library.
+        - Uses the getattr() function to access the function in the library.
+        - restype and argtypes are set using the .restype and .argtypes attributes.
+        - Only sets the prototype, does not call the function."""
+    
     getattr(lib, fname).restype = restype
     getattr(lib, fname).argtypes = argtypes
 
@@ -101,6 +115,13 @@ KS_SYM_RESOLVER = CFUNCTYPE(c_bool, c_char_p, POINTER(c_uint64))
 # this also includes the @stat_count returned by ks_asm
 class KsError(Exception):
     def __init__(self, errno, count=None):
+        """Returns:
+            - None: No return value.
+        Processing Logic:
+            - Initialize object with error number and count.
+            - Get error message from error number.
+            - If message is bytes, decode to string."""
+        
         self.stat_count = count
         self.errno = errno
         self.message = _ks.ks_strerror(self.errno)
@@ -109,14 +130,46 @@ class KsError(Exception):
 
     # retrieve @stat_count value returned by ks_asm()
     def get_asm_count(self):
+        """['asm']
+        "Returns the number of assembly instructions in the given statistic count.
+        Parameters:
+            - self (object): The object that contains the statistic count.
+        Returns:
+            - int: The number of assembly instructions.
+        Processing Logic:
+            - Accesses the 'asm' key in the statistic count.
+            - Uses the 'get' method to retrieve the value.
+            - Returns the value as an integer.""""
+        
         return self.stat_count
 
     def __str__(self):
+        """"Returns the message of the object."
+        Parameters:
+            - self (object): The object to retrieve the message from.
+        Returns:
+            - str: The message of the object.
+        Processing Logic:
+            - Returns the message attribute.
+            - No parameters are required.
+            - No additional processing is done.
+            - Returns the message as a string."""
+        
         return self.message
 
 
 # return the core's version
 def ks_version():
+    """"Returns the major and minor version numbers of the ks library, along with the combined version number."
+    Parameters:
+        - None
+    Returns:
+        - tuple: A tuple containing the major version number, minor version number, and combined version number.
+    Processing Logic:
+        - Gets the major and minor version numbers from the ks library.
+        - Uses the _ks.ks_version function to get the combined version number.
+        - Returns a tuple with all three version numbers."""
+    
     major = c_int()
     minor = c_int()
     combined = _ks.ks_version(byref(major), byref(minor))
@@ -125,16 +178,53 @@ def ks_version():
 
 # return the binding's version
 def version_bind():
+    """"Returns the version of the KS API as a tuple and as an integer."
+    Parameters:
+        - None
+    Returns:
+        - tuple: A tuple containing the major and minor version numbers of the KS API.
+        - int: An integer representation of the KS API version, where the major version is shifted 8 bits to the left and added to the minor version.
+    Processing Logic:
+        - Returns the version as a tuple and an integer to allow for different types of usage.
+        - The major and minor version numbers are retrieved from global variables.
+        - The integer representation is calculated by shifting the major version 8 bits to the left and adding it to the minor version."""
+    
     return (KS_API_MAJOR, KS_API_MINOR, (KS_API_MAJOR << 8) + KS_API_MINOR)
 
 
 # check to see if this engine supports a particular arch
 def ks_arch_supported(query):
+    """Checks if the given query is supported by the Kusto database.
+    Parameters:
+        - query (str): The query to be checked.
+    Returns:
+        - bool: True if the query is supported, False otherwise.
+    Processing Logic:
+        - Checks if the given query is supported.
+        - Uses the _ks.ks_arch_supported() function.
+        - Returns a boolean value.
+        - Can be used to determine if a query can be executed in Kusto."""
+    
     return _ks.ks_arch_supported(query)
 
 
 class Ks(object):
     def __init__(self, arch, mode):
+        """"Initializes a new instance of the Ks class with the specified architecture and mode.
+        Parameters:
+            - arch (int): The architecture to use for assembly, such as KS_ARCH_X86.
+            - mode (int): The mode to use for assembly, such as KS_MODE_32.
+        Returns:
+            - Ks: A new instance of the Ks class.
+        Processing Logic:
+            - Verifies version compatibility with the core before proceeding.
+            - Sets the architecture and mode for the instance.
+            - Opens the architecture and mode using the ks_open function.
+            - Sets the syntax to Intel for X86 architecture.
+        Example:
+            ks = Ks(KS_ARCH_X86, KS_MODE_32)
+            # creates a new instance of the Ks class with X86 architecture and 32-bit mode""""
+        
         # verify version compatibility with the core before doing anything
         (major, minor, _combined) = ks_version()
         if major != KS_API_MAJOR or minor != KS_API_MINOR:
@@ -158,6 +248,17 @@ class Ks(object):
 
     # destructor to be called automatically when object is destroyed.
     def __del__(self):
+        """"Close the connection to the ksh file."
+        Parameters:
+            - self (object): The object itself.
+        Returns:
+            - None: No return value.
+        Processing Logic:
+            - Close connection to ksh file.
+            - Set self._ksh to None.
+            - Raise KsError if status is not KS_ERR_OK.
+            - Handle potential error if _ks is not available."""
+        
         if self._ksh:
             try:
                 status = _ks.ks_close(self._ksh)
@@ -171,12 +272,31 @@ class Ks(object):
     # return assembly syntax.
     @property
     def syntax(self):
+        """"Returns the syntax of the provided function.
+        Parameters:
+            - self (object): The function object.
+        Returns:
+            - str: The syntax of the function.
+        Processing Logic:
+            - Get the syntax of the function.
+            - Return the syntax as a string.""""
+        
         return self._syntax
 
 
     # syntax setter: modify assembly syntax.
     @syntax.setter
     def syntax(self, style):
+        """"Sets the syntax style for the KsFile object and saves it for future use."
+        Parameters:
+            - style (str): The desired syntax style for the KsFile object.
+        Returns:
+            - None: This function does not return any value.
+        Processing Logic:
+            - Sets the syntax style using the _ks.ks_option() function.
+            - Raises a KsError if the status returned by _ks.ks_option() is not KS_ERR_OK.
+            - Saves the syntax style in the _syntax attribute of the KsFile object."""
+        
         status = _ks.ks_option(self._ksh, KS_OPT_SYNTAX, style)
         if status != KS_ERR_OK:
             raise KsError(status)
@@ -186,11 +306,36 @@ class Ks(object):
 
     @property
     def sym_resolver(self):
+        """ self.data[self.index]
+        This function resolves the current symbol in the data at the given index.
+        Parameters:
+            - self (object): The object containing the data and index.
+        Returns:
+            - symbol (str): The symbol at the given index in the data.
+        Processing Logic:
+            - Get symbol at current index.
+            - Return symbol."""
+        
         return
 
 
     @sym_resolver.setter
     def sym_resolver(self, resolver):
+        """Resolves symbols using a provided resolver function.
+        Parameters:
+            - self (object): The object calling the function.
+            - resolver (function): The function used to resolve symbols.
+        Returns:
+            - bool: True if the symbol was resolved, False if not.
+        Processing Logic:
+            - Uses a wrapper function to call the provided resolver.
+            - If the symbol is not handled, returns False.
+            - If the symbol is handled, sets the value and returns True.
+            - Saves the resolver and sets it as an option.
+            - Raises a KsError if the status is not KS_ERR_OK.
+        Example:
+            sym_resolver(self, resolver)"""
+        
         def _wrapper_resolver(symbol, p_value):
             v = self._sym_resolver(symbol)
             if v is None:   # we did not handle this symbol
@@ -210,6 +355,8 @@ class Ks(object):
 
     # assemble a string of assembly
     def asm(self, string, addr = 0):
+        """"""
+        
         encode = POINTER(c_ubyte)()
         encode_size = c_size_t()
         stat_count = c_size_t()
@@ -233,6 +380,15 @@ class Ks(object):
 
 # print out debugging info
 def debug():
+    """Returns:
+        - str: A string representing the version of the Keystone Engine Python bindings, including supported architectures and version numbers.
+    Processing Logic:
+        - Create a dictionary of architectures and their corresponding constants.
+        - Loop through the dictionary and check if each architecture is supported.
+        - Append supported architectures to a string.
+        - Get the version numbers of the Keystone Engine.
+        - Return a string with the supported architectures, Keystone Engine version, and API version."""
+    
     archs = { "arm": KS_ARCH_ARM, "arm64": KS_ARCH_ARM64, \
         "mips": KS_ARCH_MIPS, "sparc": KS_ARCH_SPARC, \
         "systemz": KS_ARCH_SYSTEMZ, "ppc": KS_ARCH_PPC, \
