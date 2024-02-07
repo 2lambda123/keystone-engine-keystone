@@ -1,7 +1,6 @@
 # Keystone Python bindings, by Nguyen Anh Quynnh <aquynh@gmail.com>
 import sys
-_python2 = sys.version_info[0] < 3
-if _python2:
+if _python2 := sys.version_info[0] < 3:
     range = xrange
 
 from . import arm_const, arm64_const, mips_const, sparc_const, hexagon_const, ppc_const, systemz_const, x86_const
@@ -144,8 +143,7 @@ class Ks(object):
 
         self._arch, self._mode = arch, mode
         self._ksh = c_void_p()
-        status = _ks.ks_open(arch, mode, byref(self._ksh))
-        if status != KS_ERR_OK:
+        if (status := _ks.ks_open(arch, mode, byref(self._ksh))) != KS_ERR_OK:
             self._ksh = None
             raise KsError(status)
 
@@ -177,8 +175,7 @@ class Ks(object):
     # syntax setter: modify assembly syntax.
     @syntax.setter
     def syntax(self, style):
-        status = _ks.ks_option(self._ksh, KS_OPT_SYNTAX, style)
-        if status != KS_ERR_OK:
+        if (status := _ks.ks_option(self._ksh, KS_OPT_SYNTAX, style)) != KS_ERR_OK:
             raise KsError(status)
         # save syntax
         self._syntax = style
@@ -192,8 +189,7 @@ class Ks(object):
     @sym_resolver.setter
     def sym_resolver(self, resolver):
         def _wrapper_resolver(symbol, p_value):
-            v = self._sym_resolver(symbol)
-            if v is None:   # we did not handle this symbol
+            if (v := self._sym_resolver(symbol)) is None:   # we did not handle this symbol
                 return False
 
             # we handled this symbol, so set value and return True
@@ -203,8 +199,7 @@ class Ks(object):
         # save resolver
         self._sym_resolver = resolver
         callback = KS_SYM_RESOLVER(_wrapper_resolver)
-        status = _ks.ks_option(self._ksh, KS_OPT_SYM_RESOLVER, cast(callback, c_void_p))
-        if status != KS_ERR_OK:
+        if (status := _ks.ks_option(self._ksh, KS_OPT_SYM_RESOLVER, cast(callback, c_void_p))) != KS_ERR_OK:
             raise KsError(status)
 
 
@@ -216,8 +211,7 @@ class Ks(object):
         if not isinstance(string, bytes) and isinstance(string, str):
             string = string.encode('ascii')
 
-        status = _ks.ks_asm(self._ksh, string, addr, byref(encode), byref(encode_size), byref(stat_count))
-        if (status != 0):
+        if ((status := _ks.ks_asm(self._ksh, string, addr, byref(encode), byref(encode_size), byref(stat_count))) != 0):
             errno = _ks.ks_errno(self._ksh)
             raise KsError(errno, stat_count.value)
         else:
