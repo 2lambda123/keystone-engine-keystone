@@ -3,7 +3,6 @@
 # Sample code for Keystone assembler engine.
 # By Nguyen Anh Quynh <aquynh@gmail.com>, 2016
 
-from __future__ import print_function
 from keystone import *
 
 
